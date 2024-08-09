@@ -1,74 +1,55 @@
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <WiFiServer.h>
+//MAC: 08:3a:8d:90:25:8c
 #include <ESP32Servo.h>
+#include <esp_now.h>
+#include <WiFi.h>
 
-// Replace with your network credentials
-// const char* ssid = "YOUR_SSID";
-// const char* password = "YOUR_PASSWORD";
+// Structure example to send data
+typedef struct struct_message {
+  int x;
+  int y;
+} struct_message;
 
-WiFiServer server(80);
+// Create a struct_message called myData
+struct_message myData;
 
-// Server URL to send data
-// const char* serverName = "http://yourserver.com/joystick-data"; // Replace with your server URL
-
-#define JoyStick_X_PIN 34
-#define JoyStick_Y_PIN 27
-int joyposVert;
-int joyposHorz;
+// callback function that will be executed when data is received
+void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len) {
+  memcpy(&myData, incomingData, sizeof(myData));
+  // Serial.print("Bytes received: ");
+  // Serial.println(len);
+  // Serial.print("Int X: ");
+  // Serial.println(myData.x);
+  // Serial.print("Int Y: ");
+  // Serial.println(myData.y);
+  // Serial.println();
+}
 
 #define ESC1_PIN 25
 #define ESC2_PIN 26
 Servo esc1;
 Servo esc2;
-Servo fin;
 
 void setup() {
-  Serial.begin(9600);
-
- // Connect to Wi-Fi
-  // WiFi.begin(ssid, password);
-  // while (WiFi.status() != WL_CONNECTED) {
-  //   delay(1000);
-  //   Serial.println("Connecting to WiFi...");
-  // }
-  // Serial.println("Connected to WiFi");
-
-  //  // Start the server
-  // server.begin();
-
-  pinMode(JoyStick_X_PIN, INPUT_PULLUP);
-  pinMode(JoyStick_Y_PIN, INPUT_PULLUP);
-
-  // Initialize servos
-  // fin.attach(3);
-  // for (int i = 180; i > 0; i--) {
-  //   fin.write(i);
-  //   delay(10);
-  // }
-  // for (int i = 0; i < 180; i++) {
-  //   fin.write(i);
-  //   delay(10);
-  // }
-
   esc1.attach(ESC1_PIN, 1000, 2000);
-  // esc1.write(180);
-  // delay(5000);
-  // esc1.write(0);
-  // delay(2000);
-  // esc1.write(10);
-
   esc2.attach(ESC2_PIN, 1000, 2000);
-  // esc2.write(180);
-  // delay(5000);
-  // esc2.write(0);
-  // delay(2000);
-  // esc2.write(10);
+
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+
+  // Init ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Register the receive callback
+  esp_now_register_recv_cb(OnDataRecv);
+  delay(1000);
 }
 
 void loop() {
-  int joyposVert = analogRead(JoyStick_X_PIN);
-  int joyposHorz = analogRead(JoyStick_Y_PIN);
+  int joyposVert = myData.x;
+  int joyposHorz = myData.y;
 
   Serial.print(joyposVert);
   Serial.print("  |  ");
@@ -76,63 +57,17 @@ void loop() {
 
   int motorF = map(joyposVert, 1000, 0, 0, 180);
   int motorB = map(joyposVert, 3000, 4095, 0, 180);
- // Control the motors
-  esc1.write(motorF);//forawrd motion
-  esc2.write(motorB);//backward motion
+  // Control the motors
+  esc1.write(motorF); // forward motion
+  esc2.write(motorB); // backward motion
 
-  delay(10);
-  if(joyposHorz>2800){
+  if (joyposHorz > 2800) {
     int turn = map(joyposHorz, 3000, 4095, 0, 180);
     esc1.write(turn);
     esc2.write(turn);
+    delay(10);
   }
-  
-
-
-
-  
-
-
-  // Serial.print(motorF);
-  // Serial.print("  |  ");
-  // Serial.print(motorB);      
-
-
-
-  // if (client) {
-  //   Serial.println("New Client Connected");
-  //   while (client.connected()) {
-  //     if (client.available()) {
-  //       String data = client.readStringUntil('\n');
-  //       int receivedData[2];
-
-  //       // Parse the received data
-  //       sscanf(data.c_str(), "%d %d", &receivedData[0], &receivedData[1]);
-
-  //       int throttleCW = receivedData[0];
-  //       int throttleCCW = receivedData[1];
-
-  //       int motorCW = map(throttleCW, 300, 0, 0, 180);
-  //       int motorCCW = map(throttleCCW, 300, 0, 0, 180);
-  //       int rudder;
-
-  //       // Control the motors
-  //       esc1.write(motorCW);
-  //       esc2.write(motorCCW);
-
-  //       Serial.print(throttleCW);
-  //       Serial.print("  |  ");
-  //       Serial.print(motorCW);
-  //       Serial.print("  |  ");
-  //       Serial.print(throttleCCW);
-  //       Serial.print("  |  ");
-  //       Serial.println(motorCCW);
-  //     }
-  //   }
-  //   client.stop();
-  //   Serial.println("Client Disconnected");
-  // laudol}
-
-  delay(50); // Add a delay to avoid overwhelming the server
+  delay(10); // Add a delay to avoid overwhelming the server
 }
+
 // by luko & tsecret

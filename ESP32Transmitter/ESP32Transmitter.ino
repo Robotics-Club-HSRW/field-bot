@@ -1,68 +1,83 @@
+#include <esp_now.h>
 #include <WiFi.h>
-#include <HTTPClient.h>
 
-// Replace with your network credentials
-const char* ssid = "YOUR_SSID";
-const char* password = "YOUR_PASSWORD";
+// REPLACE WITH YOUR RECEIVER MAC Address
+uint8_t receiverAddress[] = {0x08, 0x3a, 0x8d, 0x90, 0x25, 0x8c};
 
-// Server URL to send data
-const char* serverName = "http://yourserver.com/joystick-data"; // Replace with your server URL
+// Structure example to send data
+typedef struct struct_message {
+  int x;
+  int y;
+} struct_message;
 
-#define JoyStick_X_PIN 23
-#define JoyStick_Y_PIN 22
-int joyposVert;
-int joyposHorz;
+// Create a struct_message called myData
+struct_message myData;
+
+esp_now_peer_info_t peerInfo;
+
+// callback when data is sent
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  Serial.print("Last Packet Send Status: ");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+}
+
+#define JoyStick_X_PIN 36
+#define JoyStick_Y_PIN 39
+
+int valueX = 0; // to store the X-axis value
+int valueY = 0; // to store the Y-axis value
 
 void setup() {
-  Serial.begin(9600);
-
-  // Connect to Wi-Fi
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi.");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println(" connected.");
-
   pinMode(JoyStick_X_PIN, INPUT);
   pinMode(JoyStick_Y_PIN, INPUT);
+
+  // Init Serial Monitor
+  Serial.begin(115200);
+
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+
+  // Init ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Register the send callback
+  esp_now_register_send_cb(OnDataSent);
+
+  // Register peer
+  memcpy(peerInfo.peer_addr, receiverAddress, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  // Add peer
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("Failed to add peer");
+    return;
+  }
 }
 
 void loop() {
-  int joyposVert = analogRead(JoyStick_X_PIN);
-  int joyposHorz = analogRead(JoyStick_Y_PIN);
+  // Set values to send
+  int valueX = analogRead(JoyStick_X_PIN); // to store the X-axis value
+  int valueY = analogRead(JoyStick_Y_PIN); // to store the Y-axis value
 
-  Serial.print(joyposVert);
-  Serial.print("  |  ");
-  Serial.println(joyposHorz);
+  myData.x = valueX;
+  myData.y = valueY;
 
-  if (WiFi.status() == WL_CONNECTED) { // Check if the ESP32 is connected to WiFi
-    HTTPClient http;
+  Serial.print(myData.x);
+  Serial.print(" | ");
+  Serial.print(myData.y);
+  Serial.println();
 
-    http.begin(serverName); // Specify the URL
-    http.addHeader("Content-Type", "application/json"); // Specify content-type header
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(receiverAddress, (uint8_t *)&myData, sizeof(myData));
 
-    // Create JSON payload
-    String jsonPayload = "{\"joystick\": {\"x\": " + String(joyposVert) + ", \"y\": " + String(joyposHorz) + "}}";
-
-    int httpResponseCode = http.POST(jsonPayload); // Send the request
-
-    if (httpResponseCode > 0) {
-      String response = http.getString(); // Get the response to the request
-      Serial.println(httpResponseCode); // Print return code
-      Serial.println(response); // Print request answer
-    }
-    else {
-      Serial.print("Error on sending POST: ");
-      Serial.println(httpResponseCode);
-    }
-
-    http.end(); // Free resources
-  }
-  else {
-    Serial.println("Error in WiFi connection");
-  }
-
-  delay(50); // Add a delay to avoid overwhelming the server
+  // if (result == ESP_OK) {
+  //   Serial.println("Sent with success");
+  // } else {
+  //   Serial.println("Error sending the data");
+  // }
+  delay(10);
 }
