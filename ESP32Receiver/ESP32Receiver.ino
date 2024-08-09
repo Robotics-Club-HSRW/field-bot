@@ -64,7 +64,7 @@ void loop() {
   if (joyposHorz > 2800) {
     int turn = map(joyposHorz, 3000, 4095, 0, 180);
     esc1.write(turn);
-    esc2.write(turn);
+    esc2.write(turn/2);
     delay(10);
   }
   delay(10); // Add a delay to avoid overwhelming the server
