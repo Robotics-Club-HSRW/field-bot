@@ -13,7 +13,7 @@ WiFiServer server(80);
 // const char* serverName = "http://yourserver.com/joystick-data"; // Replace with your server URL
 
 #define JoyStick_X_PIN 34
-#define JoyStick_Y_PIN 35
+#define JoyStick_Y_PIN 27
 int joyposVert;
 int joyposHorz;
 
@@ -37,8 +37,8 @@ void setup() {
   //  // Start the server
   // server.begin();
 
-  pinMode(JoyStick_X_PIN, INPUT);
-  pinMode(JoyStick_Y_PIN, INPUT);
+  pinMode(JoyStick_X_PIN, INPUT_PULLUP);
+  pinMode(JoyStick_Y_PIN, INPUT_PULLUP);
 
   // Initialize servos
   // fin.attach(3);
@@ -52,37 +52,46 @@ void setup() {
   // }
 
   esc1.attach(ESC1_PIN, 1000, 2000);
-  esc1.write(180);
-  delay(5000);
-  esc1.write(0);
-  delay(2000);
-  esc1.write(10);
+  // esc1.write(180);
+  // delay(5000);
+  // esc1.write(0);
+  // delay(2000);
+  // esc1.write(10);
 
   esc2.attach(ESC2_PIN, 1000, 2000);
-  esc2.write(180);
-  delay(5000);
-  esc2.write(0);
-  delay(2000);
-  esc2.write(10);
+  // esc2.write(180);
+  // delay(5000);
+  // esc2.write(0);
+  // delay(2000);
+  // esc2.write(10);
 }
 
 void loop() {
-  int joyposVert = anlaogRead(JoyStick_X_PIN);
+  int joyposVert = analogRead(JoyStick_X_PIN);
   int joyposHorz = analogRead(JoyStick_Y_PIN);
 
   Serial.print(joyposVert);
   Serial.print("  |  ");
   Serial.println(joyposHorz);
 
-
-
   int motorF = map(joyposVert, 1000, 0, 0, 180);
   int motorB = map(joyposVert, 3000, 4095, 0, 180);
-  int rudder;
+ // Control the motors
+  esc1.write(motorF);//forawrd motion
+  esc2.write(motorB);//backward motion
 
-  // Control the motors
-  esc1.write(motorF);
-  esc2.write(motorB);
+  delay(10);
+  if(joyposHorz>2800){
+    int turn = map(joyposHorz, 3000, 4095, 0, 180);
+    esc1.write(turn);
+    esc2.write(turn);
+  }
+  
+
+
+
+  
+
 
   // Serial.print(motorF);
   // Serial.print("  |  ");
@@ -126,4 +135,4 @@ void loop() {
 
   delay(50); // Add a delay to avoid overwhelming the server
 }
-// by luko
+// by luko & tsecret
