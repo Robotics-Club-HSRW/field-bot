@@ -33,7 +33,7 @@ void setup() {
   esc1.attach(ESC1_PIN, 1000, 2000);
   esc2.attach(ESC2_PIN, 1000, 2000);
 
-  Serial.begin(115200);
+  Serial.begin(9600);
   WiFi.mode(WIFI_STA);
 
   // Init ESP-NOW

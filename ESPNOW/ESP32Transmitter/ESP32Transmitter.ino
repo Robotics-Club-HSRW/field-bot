@@ -21,8 +21,8 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 
-#define JoyStick_X_PIN 36
-#define JoyStick_Y_PIN 39
+#define JoyStick_X_PIN 35
+#define JoyStick_Y_PIN 33
 
 int valueX = 0; // to store the X-axis value
 int valueY = 0; // to store the Y-axis value
@@ -31,7 +31,7 @@ void setup() {
   pinMode(JoyStick_X_PIN, INPUT);
   pinMode(JoyStick_Y_PIN, INPUT);
 
-  // Init Serial Monitor
+  // Init Serial Monitor  
   Serial.begin(115200);
 
   // Set device as a Wi-Fi Station
