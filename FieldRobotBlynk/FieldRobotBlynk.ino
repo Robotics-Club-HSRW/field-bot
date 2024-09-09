@@ -76,6 +76,7 @@ void loop() {
   } else if (joystick_move_pos < 1500) {
     motorD = map(joystick_move_pos, 1500, 0, 0, 180); // moves backwards
     esc2.write(motorD);
+    
   } else {
     esc1.write(0);
     esc2.write(0); // Stop ESC2 when joystick is not pushed down
