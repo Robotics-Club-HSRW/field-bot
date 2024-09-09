@@ -66,24 +66,29 @@ void loop() {
 
   Blynk.run();
 
-  int motorF = 2000;
-  int motorB = 2000;
+  int motorD = 2000;
+  int motorT = 2000;
 
   // Control esc1 based on joystick_move_pos
-  if (joystick_move_pos > 3000) {
-    motorF = map(joystick_move_pos, 2500, 4095, 0, 180); // Adjust mapping range
-    esc1.write(motorF);
+  if (joystick_move_pos > 2500) {
+    motorD = map(joystick_move_pos, 2500, 4095, 0, 180); // moves backwards
+    esc1.write(motorD);
+  } else if (joystick_move_pos < 1500) {
+    motorD = map(joystick_move_pos, 1500, 0, 0, 180); // moves backwards
+    esc2.write(motorD);
   } else {
-    esc1.write(0); // Stop ESC1 when joystick is pushed upwards
-  }
-
-  // Control esc2 based on joystick_steer_pos
-  if (joystick_move_pos < 1000) {
-    motorB = map(joystick_move_pos, 1500, 0, 0, 180); // Adjust mapping range
-    esc2.write(motorB);
-  } else {
+    esc1.write(0);
     esc2.write(0); // Stop ESC2 when joystick is not pushed down
   }
+
+  // esc1.read(); 
+  // // Control esc2 based on joystick_steer_pos
+  // if (joystick_move_pos < 1000) {
+  //   motorB = map(joystick_move_pos, 1500, 0, 0, 180); // Adjust mapping range
+  //   esc2.write(motorB);
+  // } else {
+  //   esc2.write(0); // Stop ESC2 when joystick is not pushed down
+  // }
 
   // motorB = map(joystick_steer_pos, 3000, 4095, 0, 180);
   // esc2.write(motorB);
